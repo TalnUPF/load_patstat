@@ -14,11 +14,12 @@ ENGINE=myisam
 USER=
 PASS=
 HOST=
+PORT=3306
 DB=
 
 
 function show_help() {
-    echo "Usage: [-v] [-t] -u mysql_user -p mysql_pass -h mysql_host -d mysql_dbname -z patstat_zips_dir"
+    echo "Usage: [-v] [-t] -u mysql_user -p mysql_pass -h mysql_host -p port -d mysql_dbname -z patstat_zips_dir"
     echo "  -v: be verbose"
     echo "  -t: load small chunks of data for testing purposes"
     echo "  -z: directory containing patstat zipped files shipped in DVDs (defaults to $ZIPFILESPATH)"
@@ -27,7 +28,7 @@ function show_help() {
     echo "  -e: mysql engine (defaults to $ENGINE)"
 }
 
-while getopts "?vto:u:p:d:h:z:m:e:" opt; do
+while getopts "?vto:u:p:d:h:z:m:e:P:" opt; do
     case "$opt" in
     \?)
         show_help
@@ -51,6 +52,8 @@ while getopts "?vto:u:p:d:h:z:m:e:" opt; do
 	;;
     m)  MYSQLDATAPATH=$OPTARG
 	;;
+    P)  PORT=$OPTARG
+	;;
     e)  ENGINE=$(echo $OPTARG | tr  '[:upper:]' '[:lower:]')
 	;;
     esac
@@ -69,7 +72,7 @@ fi
 
 if [[ ! $verbose -eq 0 ]]
 then
-    echo "user: $USER pass: $PASS host: $HOST database: $DB"
+    echo "user: $USER pass: $PASS host: $HOST $PORT database: $DB"
     echo "zipped files path: $ZIPFILESPATH"
     echo "verbose=$verbose, test=$DEMO leftovers: $@"
 fi
@@ -79,10 +82,11 @@ if [ ! -d $ZIPFILESPATH ]; then
     exit
 fi
 
-SENDSQL="mysql -vv --show-warnings --local-infile -u$USER -p$PASS -h$HOST $DB"
+SENDSQL="mysql -vv --show-warnings --local-infile -u$USER -p$PASS -h$HOST -P$PORT $DB"
+echo $SENDSQL
 
 function create_db() {
-    ./tools/create_schema.sh $DB $ENGINE | mysql -vv --show-warnings -u$USER -p$PASS -h$HOST
+    ./tools/create_schema.sh $DB $ENGINE | mysql -vv --show-warnings -u$USER -p$PASS -h$HOST -P$PORT
     echo FLUSH TABLES \; | $SENDSQL
 }
 
@@ -173,8 +177,8 @@ function main(){
     # loads official patstat tables
     load_table tls201_appln
     load_table tls202_appln_title
-    load_table tls204_appln_prior
-    load_table tls205_tech_rel
+ #   load_table tls204_appln_prior
+ #   load_table tls205_tech_rel
     load_table tls206_person
     load_table tls904_nuts
     load_table tls906_person  # this is person table with harmonized names
@@ -182,24 +186,24 @@ function main(){
     load_table tls209_appln_ipc
     load_table tls210_appln_n_cls
     load_table tls211_pat_publn
-    load_table tls212_citation
-    load_table tls214_npl_publn
-    load_table tls215_citn_categ
-    load_table tls216_appln_contn
+ #   load_table tls212_citation
+ #   load_table tls214_npl_publn
+ #   load_table tls215_citn_categ
+ #   load_table tls216_appln_contn
     load_table tls222_appln_jp_class
     load_table tls223_appln_docus
     load_table tls224_appln_cpc
-    load_table tls226_person_orig
-    load_table tls227_pers_publn
+ #  load_table tls226_person_orig
+ #   load_table tls227_pers_publn
     load_table tls228_docdb_fam_citn
     load_table tls229_appln_nace2
     load_table tls230_appln_techn_field
     load_table tls801_country
-    load_table tls803_legal_event_code
+ #   load_table tls803_legal_event_code
     load_table tls901_techn_field_ipc
     load_table tls902_ipc_nace2
     load_table tls203_appln_abstr
-    load_table tls231_inpadoc_legal_event
+  #  load_table tls231_inpadoc_legal_event
 
     # finally, prints out some statistics on loaded tables
     $SENDSQL <<EOF
